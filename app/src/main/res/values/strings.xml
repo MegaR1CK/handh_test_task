@@ -8,4 +8,7 @@
     <string name="error_empty_field">Поле должно быть заполнено!</string>
     <string name="error_incorrect_email">Email введен некорректно!</string>
     <string name="error_weak_password">Пароль слишком слабый!</string>
+    <string name="password_help">
+        Пароль должен состоять как минимум из 8 символов и включать в себя буквы верхнего и нижнего регистра, а также цифры.
+    </string>
 </resources>

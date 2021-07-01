@@ -3,7 +3,11 @@ package com.example.testtask.ui
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.Menu
+import android.view.MenuItem
+import android.view.inputmethod.InputMethodManager
+import android.widget.Toast
 import androidx.activity.viewModels
+import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.ViewModelProvider
 import com.example.testtask.AuthViewModel
@@ -16,6 +20,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var viewModelFactory: AuthViewModelFactory
     private lateinit var viewModel: AuthViewModel
+    private lateinit var optionsMenu: Menu
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -27,12 +32,25 @@ class MainActivity : AppCompatActivity() {
         binding.apply {
             setupToolbar(this)
             setupObservers(this)
+            fieldPassword.setOnFocusChangeListener { v, hasFocus ->
+                optionsMenu.findItem(R.id.menu_create).isVisible = hasFocus
+            }
+            boxPassword.setEndIconOnClickListener {
+                Toast.makeText(this@MainActivity, getString(R.string.password_help), Toast.LENGTH_LONG).show()
+            }
         }
-
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.menu_main, menu)
+        if (menu != null) optionsMenu = menu
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        if (item.itemId == R.id.menu_create) {
+            viewModel.onCreateButtonClick()
+        }
         return true
     }
 
@@ -45,16 +63,32 @@ class MainActivity : AppCompatActivity() {
     private fun setupObservers(binding: ActivityMainBinding) {
         viewModel.onSignInButtonClickEvent.observe(this) {
             if (it) {
-                viewModel.requestWeather(
-                        binding.fieldEmail.text?.toString() ?: "",
-                        binding.fieldPassword.text?.toString() ?: ""
-                )
+                hideKeyboard()
+                binding.apply {
+                    fieldEmail.clearFocus()
+                    fieldPassword.clearFocus()
+                }
+                viewModel.requestWeather()
                 viewModel.onSignInButtonClicked()
             }
         }
 
         viewModel.apiResponse.observe(this) {
             Snackbar.make(binding.buttonSignIn, it, Snackbar.LENGTH_LONG).show()
+        }
+
+        viewModel.onCreateButtonClickEvent.observe(this) {
+            if (it) {
+                viewModel.generateRandomPassword()
+                viewModel.onCreateButtonClicked()
+            }
+        }
+    }
+
+    private fun hideKeyboard() {
+        currentFocus?.let {
+            val inputMethodManager = ContextCompat.getSystemService(this, InputMethodManager::class.java)
+            inputMethodManager?.hideSoftInputFromWindow(it.windowToken, 0)
         }
     }
 }
