@@ -1,32 +1,16 @@
-package com.example.testtask
+package com.example.testtask.ui
 
 import android.app.Application
-import android.util.Log
-import androidx.databinding.BaseObservable
-import androidx.databinding.Bindable
-import androidx.lifecycle.*
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.viewModelScope
+import com.example.testtask.R
 import com.example.testtask.data.WeatherRepository
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 class AuthViewModel(private val app: Application) : AndroidViewModel(app) {
-
-    companion object Observer : BaseObservable() {
-
-        @get:Bindable
-        var email: String = ""
-            set(value) {
-                field = value
-                notifyPropertyChanged(BR.email)
-            }
-
-        @get:Bindable
-        var password: String = ""
-            set(value) {
-                field = value
-                notifyPropertyChanged(BR.password)
-            }
-    }
 
     private val _onSignInButtonClickEvent = MutableLiveData<Boolean>()
     val onSignInButtonClickEvent: LiveData<Boolean>
@@ -52,7 +36,13 @@ class AuthViewModel(private val app: Application) : AndroidViewModel(app) {
     val isLoading: LiveData<Boolean>
         get() = _isLoading
 
-    //TODO: create
+    private val _email = MutableLiveData<String>()
+    val email: LiveData<String>
+        get() = _email
+
+    private val _password = MutableLiveData<String>()
+    val password: LiveData<String>
+        get() = _password
 
     private val repository = WeatherRepository()
 
@@ -72,7 +62,7 @@ class AuthViewModel(private val app: Application) : AndroidViewModel(app) {
         _onCreateButtonClickEvent.value = false
     }
 
-    fun requestWeather() {
+    fun requestWeather(email: String, password: String) {
         if (isDataValid(email, password)) {
             viewModelScope.launch {
                 try {
@@ -99,7 +89,7 @@ class AuthViewModel(private val app: Application) : AndroidViewModel(app) {
             }
             if (it != 3) passwordString += '-'
         }
-        password = passwordString
+        _password.value = passwordString
     }
 
     private fun isDataValid(email: String, password: String): Boolean {

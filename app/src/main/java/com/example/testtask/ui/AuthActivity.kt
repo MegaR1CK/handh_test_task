@@ -1,22 +1,19 @@
 package com.example.testtask.ui
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
-import androidx.activity.viewModels
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.ViewModelProvider
-import com.example.testtask.AuthViewModel
-import com.example.testtask.AuthViewModelFactory
 import com.example.testtask.R
 import com.example.testtask.databinding.ActivityMainBinding
 import com.google.android.material.snackbar.Snackbar
 
-class MainActivity : AppCompatActivity() {
+class AuthActivity : AppCompatActivity() {
 
     private lateinit var viewModelFactory: AuthViewModelFactory
     private lateinit var viewModel: AuthViewModel
@@ -32,11 +29,13 @@ class MainActivity : AppCompatActivity() {
         binding.apply {
             setupToolbar(this)
             setupObservers(this)
-            fieldPassword.setOnFocusChangeListener { v, hasFocus ->
-                optionsMenu.findItem(R.id.menu_create).isVisible = hasFocus
+            fieldPassword.setOnFocusChangeListener { _, hasFocus ->
+                if (::optionsMenu.isInitialized) {
+                    optionsMenu.findItem(R.id.menu_create).isVisible = hasFocus
+                }
             }
             boxPassword.setEndIconOnClickListener {
-                Toast.makeText(this@MainActivity, getString(R.string.password_help), Toast.LENGTH_LONG).show()
+                Toast.makeText(this@AuthActivity, getString(R.string.password_help), Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -68,7 +67,10 @@ class MainActivity : AppCompatActivity() {
                     fieldEmail.clearFocus()
                     fieldPassword.clearFocus()
                 }
-                viewModel.requestWeather()
+                viewModel.requestWeather(
+                        binding.fieldEmail.text.toString(),
+                        binding.fieldPassword.text.toString()
+                )
                 viewModel.onSignInButtonClicked()
             }
         }
@@ -82,6 +84,14 @@ class MainActivity : AppCompatActivity() {
                 viewModel.generateRandomPassword()
                 viewModel.onCreateButtonClicked()
             }
+        }
+
+        viewModel.email.observe(this) {
+            binding.fieldEmail.setText(it)
+        }
+
+        viewModel.password.observe(this) {
+            binding.fieldPassword.setText(it)
         }
     }
 

@@ -1,4 +1,4 @@
-package com.example.testtask
+package com.example.testtask.ui
 
 import android.app.Application
 import androidx.lifecycle.ViewModel
