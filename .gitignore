@@ -13,3 +13,5 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Стоит добавить сюда .idea/

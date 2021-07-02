@@ -29,11 +29,13 @@ class AuthActivity : AppCompatActivity() {
         binding.apply {
             setupToolbar(this)
             setupObservers(this)
+            // Можно было бы еще добавить валидацию и показ ошибки при потере фокуса в поле
             fieldPassword.setOnFocusChangeListener { _, hasFocus ->
                 if (::optionsMenu.isInitialized) {
                     optionsMenu.findItem(R.id.menu_create).isVisible = hasFocus
                 }
             }
+            // Неплохо было бы по клику на иконку ошибки то же самое показывать
             boxPassword.setEndIconOnClickListener {
                 Toast.makeText(this@AuthActivity, getString(R.string.password_help), Toast.LENGTH_LONG).show()
             }
@@ -54,6 +56,8 @@ class AuthActivity : AppCompatActivity() {
     }
 
     private fun setupToolbar(binding: ActivityMainBinding) {
+        // Мы договорились не пользоваться setSupportActionBar.
+        // Меню так же делаем через тулбар. Т.е. toolbar.inflateMenu(int resId) и toolbar.setOnMenuItemClickListener
         setSupportActionBar(binding.toolbar)
         supportActionBar?.setTitle(R.string.activity_title)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
