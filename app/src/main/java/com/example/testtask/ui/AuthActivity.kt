@@ -1,8 +1,7 @@
 package com.example.testtask.ui
 
 import android.os.Bundle
-import android.view.Menu
-import android.view.MenuItem
+import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -17,7 +16,6 @@ class AuthActivity : AppCompatActivity() {
 
     private lateinit var viewModelFactory: AuthViewModelFactory
     private lateinit var viewModel: AuthViewModel
-    private lateinit var optionsMenu: Menu
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -30,73 +28,85 @@ class AuthActivity : AppCompatActivity() {
             setupToolbar(this)
             setupObservers(this)
             // Можно было бы еще добавить валидацию и показ ошибки при потере фокуса в поле
-            fieldPassword.setOnFocusChangeListener { _, hasFocus ->
-                if (::optionsMenu.isInitialized) {
-                    optionsMenu.findItem(R.id.menu_create).isVisible = hasFocus
+            editTextEmail.setOnFocusChangeListener { _, hasFocus ->
+                if (!hasFocus) {
+                    viewModel?.validateEmail(editTextEmail.text.toString())
                 }
             }
+            editTextPassword.setOnFocusChangeListener { _, hasFocus ->
+                binding.toolbar.menu.findItem(R.id.menu_create).isVisible = hasFocus
+                if (!hasFocus) {
+                    viewModel?.validatePassword(editTextPassword.text.toString())
+                }
+            }
+            editTextPassword.setOnEditorActionListener { _, actionId, _ ->
+                if (actionId == EditorInfo.IME_ACTION_DONE) {
+                    initiateRequestWeather(this)
+                }
+                true
+            }
+            layoutPassword.setEndIconOnClickListener {
+                showPasswordHelp()
+            }
             // Неплохо было бы по клику на иконку ошибки то же самое показывать
-            boxPassword.setEndIconOnClickListener {
-                Toast.makeText(this@AuthActivity, getString(R.string.password_help), Toast.LENGTH_LONG).show()
+            layoutPassword.setErrorIconOnClickListener {
+                showPasswordHelp()
             }
         }
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-        menuInflater.inflate(R.menu.menu_main, menu)
-        if (menu != null) optionsMenu = menu
-        return true
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        if (item.itemId == R.id.menu_create) {
-            viewModel.onCreateButtonClick()
-        }
-        return true
     }
 
     private fun setupToolbar(binding: ActivityMainBinding) {
         // Мы договорились не пользоваться setSupportActionBar.
         // Меню так же делаем через тулбар. Т.е. toolbar.inflateMenu(int resId) и toolbar.setOnMenuItemClickListener
-        setSupportActionBar(binding.toolbar)
-        supportActionBar?.setTitle(R.string.activity_title)
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        binding.toolbar.apply {
+            inflateMenu(R.menu.menu_main)
+            setTitle(R.string.activity_title)
+            setNavigationIcon(R.drawable.ic_arrow_back_black_24_px)
+            setNavigationOnClickListener {
+                onBackPressed()
+            }
+
+            setOnMenuItemClickListener {
+                if (it.itemId == R.id.menu_create) {
+                    viewModel.onCreateButtonClick()
+                }
+                true
+            }
+        }
     }
 
     private fun setupObservers(binding: ActivityMainBinding) {
-        viewModel.onSignInButtonClickEvent.observe(this) {
-            if (it) {
-                hideKeyboard()
-                binding.apply {
-                    fieldEmail.clearFocus()
-                    fieldPassword.clearFocus()
-                }
-                viewModel.requestWeather(
-                        binding.fieldEmail.text.toString(),
-                        binding.fieldPassword.text.toString()
-                )
-                viewModel.onSignInButtonClicked()
-            }
+        viewModel.onSignInButtonClickLiveEvent.observe(this) {
+            initiateRequestWeather(binding)
         }
 
-        viewModel.apiResponse.observe(this) {
+        viewModel.apiResponseLiveEvent.observe(this) {
             Snackbar.make(binding.buttonSignIn, it, Snackbar.LENGTH_LONG).show()
         }
 
-        viewModel.onCreateButtonClickEvent.observe(this) {
-            if (it) {
-                viewModel.generateRandomPassword()
-                viewModel.onCreateButtonClicked()
-            }
+        viewModel.onCreateButtonClickLiveEvent.observe(this) {
+            viewModel.generateRandomPassword()
         }
 
         viewModel.email.observe(this) {
-            binding.fieldEmail.setText(it)
+            binding.editTextEmail.setText(it)
         }
 
         viewModel.password.observe(this) {
-            binding.fieldPassword.setText(it)
+            binding.editTextPassword.setText(it)
         }
+    }
+
+    private fun initiateRequestWeather(binding: ActivityMainBinding) {
+        hideKeyboard()
+        binding.apply {
+            editTextEmail.clearFocus()
+            editTextPassword.clearFocus()
+        }
+        viewModel.requestWeather(
+            binding.editTextEmail.text.toString(),
+            binding.editTextPassword.text.toString()
+        )
     }
 
     private fun hideKeyboard() {
@@ -104,5 +114,9 @@ class AuthActivity : AppCompatActivity() {
             val inputMethodManager = ContextCompat.getSystemService(this, InputMethodManager::class.java)
             inputMethodManager?.hideSoftInputFromWindow(it.windowToken, 0)
         }
+    }
+
+    private fun showPasswordHelp() {
+        Toast.makeText(this, getString(R.string.password_help), Toast.LENGTH_LONG).show()
     }
 }

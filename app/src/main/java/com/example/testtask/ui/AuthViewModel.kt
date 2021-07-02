@@ -12,13 +12,23 @@ import kotlin.math.roundToInt
 
 class AuthViewModel(private val app: Application) : AndroidViewModel(app) {
 
-    private val _onSignInButtonClickEvent = MutableLiveData<Boolean>()
-    val onSignInButtonClickEvent: LiveData<Boolean>
-        get() = _onSignInButtonClickEvent
+    companion object {
+        private const val CITY = "saransk"
+        private const val PASSWORD_LOWER_LETTERS = "abcdefghijklmnopqrstuvwxyz"
+        private const val PASSWORD_UPPER_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        private const val PASSWORD_NUMBERS = "0123456789"
+        private const val EMAIL_PATTERN = "[A-Za-z0-9]+@[a-z]+.[a-z]{2,4}"
+        private const val PASSWORD_PATTERN = "^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9]).{8,}\$"
+    }
 
-    private val _onCreateButtonClickEvent = MutableLiveData<Boolean>()
-    val onCreateButtonClickEvent: LiveData<Boolean>
-        get() = _onCreateButtonClickEvent
+    private val _onSignInButtonClickLiveEvent = SingleLiveEvent<Unit>()
+    val onSignInButtonClickLiveEvent: LiveData<Unit> = _onSignInButtonClickLiveEvent
+
+    private val _onCreateButtonClickLiveEvent = SingleLiveEvent<Unit>()
+    val onCreateButtonClickLiveEvent: LiveData<Unit> = _onCreateButtonClickLiveEvent
+
+    private val _apiResponseLiveEvent = SingleLiveEvent<String>()
+    val apiResponseLiveEvent: LiveData<String> = _apiResponseLiveEvent
 
     private val _emailErrorText = MutableLiveData<String?>()
     val emailErrorText: LiveData<String?>
@@ -27,10 +37,6 @@ class AuthViewModel(private val app: Application) : AndroidViewModel(app) {
     private val _passwordErrorText = MutableLiveData<String?>()
     val passwordErrorText: LiveData<String?>
         get() = _passwordErrorText
-
-    private val _apiResponse = MutableLiveData<String>()
-    val apiResponse: LiveData<String>
-        get() = _apiResponse
 
     private val _isLoading = MutableLiveData<Boolean>()
     val isLoading: LiveData<Boolean>
@@ -51,19 +57,11 @@ class AuthViewModel(private val app: Application) : AndroidViewModel(app) {
      * Мы завели класс [SingleLiveEvent]. Можешь использовать его вместо LiveData
      * */
     fun onSignInButtonClick() {
-        _onSignInButtonClickEvent.value = true
-    }
-
-    fun onSignInButtonClicked() {
-        _onSignInButtonClickEvent.value = false
+        _onSignInButtonClickLiveEvent.call()
     }
 
     fun onCreateButtonClick() {
-        _onCreateButtonClickEvent.value = true
-    }
-
-    fun onCreateButtonClicked() {
-        _onCreateButtonClickEvent.value = false
+        _onCreateButtonClickLiveEvent.call()
     }
 
     fun requestWeather(email: String, password: String) {
@@ -72,13 +70,13 @@ class AuthViewModel(private val app: Application) : AndroidViewModel(app) {
                 try {
                     _isLoading.value = true
                     // Строки и числа выносим в константы. В других местах тоже
-                    val response = repository.getWeather("saransk")
+                    val response = repository.getWeather(CITY)
                     val clouds = response.weather?.first()?.main
                     val temp = response.main?.temp?.roundToInt()
                     // Тут лучше делать через ресурсы
-                    _apiResponse.value = "$clouds, $temp °С"
+                    _apiResponseLiveEvent.value = app.resources.getString(R.string.weather_info, clouds, temp)
                 } catch (e: Exception) {
-                    _apiResponse.value = e.localizedMessage
+                    _apiResponseLiveEvent.value = e.localizedMessage
                 } finally {
                     _isLoading.value = false
                 }
@@ -87,51 +85,58 @@ class AuthViewModel(private val app: Application) : AndroidViewModel(app) {
     }
 
     fun generateRandomPassword() {
-        val chars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-        var passwordString = ""
-        repeat(4) {
+        val passwordString = StringBuilder()
+        val passwordChars = PASSWORD_LOWER_LETTERS + PASSWORD_UPPER_LETTERS + PASSWORD_NUMBERS
+        passwordString.append(PASSWORD_LOWER_LETTERS.random())
+        passwordString.append(PASSWORD_UPPER_LETTERS.random())
+        passwordString.append(PASSWORD_NUMBERS.random())
+        repeat(5) {
             // Кажется, нет гарантии, что всегда будет 1 заглавная буква, одна строчная и одна цифра.
             // И достаточно было бы сделать 6 символов, а не 20
-            repeat(4) {
-                passwordString += chars.random()
-            }
-            if (it != 3) passwordString += '-'
+            passwordString.append(passwordChars.random())
         }
-        _password.value = passwordString
+        _password.value = passwordString.toString()
     }
 
-    private fun isDataValid(email: String, password: String): Boolean {
+    fun validateEmail(email: String): Boolean {
         // Паттерны следует вынести в константы
-        val emailRegex = Regex("[A-Za-z0-9]+@[a-z]+.[a-z]{2,4}")
-        val passwordRegex = Regex("^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9]).{8,}\$")
-        var isEmailCorrect = true
-        var isPasswordCorrect = true
-        hideErrors()
-        when {
+        val emailRegex = Regex(EMAIL_PATTERN)
+        return when {
             email.isBlank() -> {
                 _emailErrorText.value = app.resources.getString(R.string.error_empty_field)
-                isEmailCorrect = false
+                false
             }
             !email.matches(emailRegex) -> {
                 _emailErrorText.value = app.resources.getString(R.string.error_incorrect_email)
-                isEmailCorrect = false
+                false
+            }
+            else -> {
+                _emailErrorText.value = null
+                true
             }
         }
-        when {
+    }
+
+    fun validatePassword(password: String): Boolean {
+        // Паттерны следует вынести в константы
+        val passwordRegex = Regex(PASSWORD_PATTERN)
+        return when {
             password.isBlank() -> {
                 _passwordErrorText.value = app.resources.getString(R.string.error_empty_field)
-                isPasswordCorrect = false
+                false
             }
             !password.matches(passwordRegex) -> {
                 _passwordErrorText.value = app.resources.getString(R.string.error_weak_password)
-                isPasswordCorrect = false
+                false
+            }
+            else -> {
+                _passwordErrorText.value = null
+                true
             }
         }
-        return isEmailCorrect && isPasswordCorrect
     }
 
-    private fun hideErrors() {
-        _emailErrorText.value = null
-        _passwordErrorText.value = null
+    private fun isDataValid(email: String, password: String): Boolean {
+        return validateEmail(email) && validatePassword(password)
     }
 }

@@ -11,4 +11,5 @@
     <string name="password_help">
         Пароль должен состоять как минимум из 8 символов и включать в себя буквы верхнего и нижнего регистра, а также цифры.
     </string>
+    <string name="weather_info">%s, %d °С</string>
 </resources>

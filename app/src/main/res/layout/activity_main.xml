@@ -33,6 +33,9 @@
                 android:id="@+id/toolbar"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
+                android:paddingEnd="8dp"
+                android:paddingStart="8dp"
+                app:titleTextAppearance="@style/ToolbarTextAppearance"
                 android:theme="@style/ToolbarTheme" />
 
             <!-- Зачем отрицательный марджин? -->
@@ -54,19 +57,20 @@
             android:paddingTop="24dp">
 
             <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/box_email"
+                android:id="@+id/layoutEmail"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:errorText="@{viewModel.emailErrorText}"
                 style="@style/TextInputStyle">
 
                 <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/field_email"
+                    android:id="@+id/editTextEmail"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:hint="@string/email_hint"
                     android:inputType="textEmailAddress"
-                    android:imeOptions="actionNext"/>
+                    android:imeOptions="actionNext"
+                    style="@style/EditTextStyle" />
 
             </com.google.android.material.textfield.TextInputLayout>
 
@@ -78,10 +82,10 @@
              -->
 
             <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/box_password"
+                android:id="@+id/layoutPassword"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
+                android:layout_marginTop="15dp"
                 app:endIconMode="custom"
                 app:endIconTint="@color/gray"
                 app:endIconDrawable="@drawable/ic_help"
@@ -96,23 +100,24 @@
                 ActionDone не отрабатывает
                  -->
                 <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/field_password"
+                    android:id="@+id/editTextPassword"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:hint="@string/password_hint"
                     android:inputType="textPassword"
                     android:imeOptions="actionDone"
-                    android:textCursorDrawable="@drawable/text_cursor" />
+                    android:letterSpacing="0.4"
+                    style="@style/EditTextStyle" />
 
             </com.google.android.material.textfield.TextInputLayout>
 
             <!-- Кнопка в макете больше по высоте -->
             <Button
-                android:id="@+id/button_sign_in"
+                android:id="@+id/buttonSignIn"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
-                android:paddingVertical="10dp"
+                android:paddingVertical="14dp"
                 android:text="@string/sign_in_label"
                 android:onClick="@{(view) -> viewModel.onSignInButtonClick()}"/>
         </LinearLayout>

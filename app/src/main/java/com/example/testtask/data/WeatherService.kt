@@ -13,7 +13,7 @@ interface WeatherService {
     @GET("weather")
     suspend fun getCurrentWeather(
         // Лучше давать переменным осмысленные имена. Например, query вместо q
-        @Query("q") q: String,
+        @Query("q") query: String,
         @Query("lang") lang: String = "ru",
         @Query("units") units: String = "metric",
         @Query("appid") appid: String = "e35ff139f27685255e98d4ed735260a3"
