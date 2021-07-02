@@ -46,6 +46,10 @@ class AuthViewModel(private val app: Application) : AndroidViewModel(app) {
 
     private val repository = WeatherRepository()
 
+    /**
+     * Для случаев, когда лайдата должна уведомить слушателей только один раз ( например при клике на кнопку),
+     * Мы завели класс [SingleLiveEvent]. Можешь использовать его вместо LiveData
+     * */
     fun onSignInButtonClick() {
         _onSignInButtonClickEvent.value = true
     }
@@ -67,9 +71,11 @@ class AuthViewModel(private val app: Application) : AndroidViewModel(app) {
             viewModelScope.launch {
                 try {
                     _isLoading.value = true
+                    // Строки и числа выносим в константы. В других местах тоже
                     val response = repository.getWeather("saransk")
                     val clouds = response.weather?.first()?.main
                     val temp = response.main?.temp?.roundToInt()
+                    // Тут лучше делать через ресурсы
                     _apiResponse.value = "$clouds, $temp °С"
                 } catch (e: Exception) {
                     _apiResponse.value = e.localizedMessage
@@ -84,6 +90,8 @@ class AuthViewModel(private val app: Application) : AndroidViewModel(app) {
         val chars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
         var passwordString = ""
         repeat(4) {
+            // Кажется, нет гарантии, что всегда будет 1 заглавная буква, одна строчная и одна цифра.
+            // И достаточно было бы сделать 6 символов, а не 20
             repeat(4) {
                 passwordString += chars.random()
             }
@@ -93,6 +101,7 @@ class AuthViewModel(private val app: Application) : AndroidViewModel(app) {
     }
 
     private fun isDataValid(email: String, password: String): Boolean {
+        // Паттерны следует вынести в константы
         val emailRegex = Regex("[A-Za-z0-9]+@[a-z]+.[a-z]{2,4}")
         val passwordRegex = Regex("^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9]).{8,}\$")
         var isEmailCorrect = true
